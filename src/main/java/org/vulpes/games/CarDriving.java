@@ -28,16 +28,23 @@ public class CarDriving extends JComponent implements ActionListener, KeyListene
 
     public static int PLAYER_CAR_LOC = 200;
 
+    public static int SPEED = 3;
+    public static int OBSTACLE_TIMER = 0;
+
     Map<String, Image> images = new HashMap<>();
     List<GameElement> gameElements = new ArrayList<>();
     Media happySound;
+    Media carHorn;
     Timer timer = new Timer(5, this);
 
     public CarDriving() throws IOException {
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
         images.put("PlayerCar", ImageIO.read(new File("src/main/resources", "RedCar.png")));
 
-        images.put("Hole", ImageIO.read(new File("src/main/resources", "hole.png")));
+        images.put("Obstacle1", ImageIO.read(new File("src/main/resources", "hole.png")));
+        images.put("Obstacle2", ImageIO.read(new File("src/main/resources", "obstacle1.jpeg")));
+        images.put("Obstacle3", ImageIO.read(new File("src/main/resources", "obstacle2.jpeg")));
+
         images.put("Drop", ImageIO.read(new File("src/main/resources", "drop.jpg")));
         images.put("Lamp", ImageIO.read(new File("src/main/resources", "Lamp.jpg")));
 
@@ -53,8 +60,8 @@ public class CarDriving extends JComponent implements ActionListener, KeyListene
                 key -> images.put(key, makeWhiteTransparent(images.get(key)))
         );
 
-        String bip = "bip.mp3";
-        happySound = new Media(new File("src/main/resources", bip).toURI().toString());
+        happySound = new Media(new File("src/main/resources", "bip.mp3").toURI().toString());
+        carHorn = new Media(new File("src/main/resources", "carHorn.mp3").toURI().toString());
 
         timer.start();
     }
@@ -79,26 +86,27 @@ public class CarDriving extends JComponent implements ActionListener, KeyListene
     }
 
     public void actionPerformed(ActionEvent ev) {
-        if (ev.getSource() == timer) {
+        if (ev.getSource() == timer && !isCarBlocked()) {
             if (ThreadLocalRandom.current().nextInt(0, 300) == 0) addTreeLeft();
             if (ThreadLocalRandom.current().nextInt(0, 300) == 0) addTreeRight();
             if (ThreadLocalRandom.current().nextInt(0, 300) == 0) addLampLeft();
             if (ThreadLocalRandom.current().nextInt(0, 300) == 0) addLampRight();
-//            if (ThreadLocalRandom.current().nextInt(0, 300) == 0) addHole();
+            if (ThreadLocalRandom.current().nextInt(0, 300) == 0 && OBSTACLE_TIMER <= 0) addObstacle();
             if (ThreadLocalRandom.current().nextInt(0, 300) == 0) addDrop();
+            OBSTACLE_TIMER--;
             moveDown();
-            repaint();// this will call at every 0,1 second
+            repaint();
         }
     }
 
     private void addTreeLeft() {
         int treeNum = ThreadLocalRandom.current().nextInt(1, 8);
-        gameElements.add(new GameElement("Tree" + treeNum, 0, -500, 200, ThreadLocalRandom.current().nextInt(150, 500)));
+        gameElements.add(new GameElement("Tree" + treeNum, ThreadLocalRandom.current().nextInt(-20, 20), -500, 200, ThreadLocalRandom.current().nextInt(150, 500)));
     }
 
     private void addTreeRight() {
         int treeNum = ThreadLocalRandom.current().nextInt(1, 8);
-        gameElements.add(new GameElement("Tree" + treeNum, 500, -500, 200, ThreadLocalRandom.current().nextInt(150, 500)));
+        gameElements.add(new GameElement("Tree" + treeNum, 500 + ThreadLocalRandom.current().nextInt(-20, 20), -500, 200, ThreadLocalRandom.current().nextInt(150, 500)));
     }
 
     private void addLampLeft() {
@@ -109,9 +117,12 @@ public class CarDriving extends JComponent implements ActionListener, KeyListene
         gameElements.add(new GameElement("Lamp", 500, -200, 50, 200));
     }
 
-    private void addHole() {
-        gameElements.add(new GameElement("Hole", 200 + 150 * ThreadLocalRandom.current().nextInt(0, 2), -200, 150, 50));
+    private void addObstacle() {
+        int obNum = ThreadLocalRandom.current().nextInt(1, 4);
+        gameElements.add(new GameElement("Obstacle" + obNum, 200 + 150 * ThreadLocalRandom.current().nextInt(0, 2), -200, 150, 50));
+        OBSTACLE_TIMER = 500;
     }
+
 
     private void addDrop() {
         gameElements.add(new GameElement("Drop", 225 + 175 * ThreadLocalRandom.current().nextInt(0, 2), -200, 50, 100));
@@ -121,7 +132,7 @@ public class CarDriving extends JComponent implements ActionListener, KeyListene
     private void moveDown() {
         gameElements.forEach(
                 gameElement -> {
-                    gameElement.locY = gameElement.locY + 3;
+                    gameElement.locY = gameElement.locY + SPEED;
                 }
         );
         gameElements = gameElements.stream()
@@ -134,12 +145,19 @@ public class CarDriving extends JComponent implements ActionListener, KeyListene
                 .filter(gameElement -> gameElement.locY + gameElement.height > HEIGHT - 300)
                 .toList();
 
-        if (!dropsToKill.isEmpty()){
+        if (!dropsToKill.isEmpty()) {
             new MediaPlayer(happySound).play();
             gameElements.removeAll(dropsToKill);
         }
 
 
+    }
+
+    private boolean isCarBlocked() {
+        return gameElements.stream()
+                .filter(gameElement -> gameElement.imageName.contains("Obstacle"))
+                .filter(gameElement -> gameElement.locX + gameElement.width / 2 > PLAYER_CAR_LOC && gameElement.locX + gameElement.width / 2 < PLAYER_CAR_LOC + 150)
+                .anyMatch(gameElement -> gameElement.locY + gameElement.height >= HEIGHT - 300);
     }
 
     @Override
@@ -155,11 +173,22 @@ public class CarDriving extends JComponent implements ActionListener, KeyListene
         if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
             CarDriving.PLAYER_CAR_LOC = 350;
         }
+        if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+            SPEED = 0;
+        }
+        if (e.getKeyCode() == KeyEvent.VK_UP) {
+            if (isCarBlocked())
+                new MediaPlayer(carHorn).play();
+            else
+                SPEED = 5;
+        }
     }
 
     @Override
     public void keyReleased(KeyEvent e) {
-
+        if (e.getKeyCode() == KeyEvent.VK_DOWN || e.getKeyCode() == KeyEvent.VK_UP) {
+            SPEED = 3;
+        }
     }
 
     private Image makeWhiteTransparent(Image im) {
