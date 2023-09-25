@@ -131,9 +131,7 @@ public class CarDriving extends JComponent implements ActionListener, KeyListene
 
     private void moveDown() {
         gameElements.forEach(
-                gameElement -> {
-                    gameElement.locY = gameElement.locY + SPEED;
-                }
+                gameElement -> gameElement.locY = gameElement.locY + SPEED
         );
         gameElements = gameElements.stream()
                 .filter(gameElement -> gameElement.locY < HEIGHT)
@@ -169,9 +167,11 @@ public class CarDriving extends JComponent implements ActionListener, KeyListene
     public void keyPressed(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_LEFT) {
             CarDriving.PLAYER_CAR_LOC = 200;
+            if(isCarBlocked()) CarDriving.PLAYER_CAR_LOC = 350;
         }
         if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
             CarDriving.PLAYER_CAR_LOC = 350;
+            if (isCarBlocked()) CarDriving.PLAYER_CAR_LOC = 200;
         }
         if (e.getKeyCode() == KeyEvent.VK_DOWN) {
             SPEED = 0;
