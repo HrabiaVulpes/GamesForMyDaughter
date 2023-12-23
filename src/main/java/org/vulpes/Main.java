@@ -2,6 +2,7 @@ package org.vulpes;
 
 import com.sun.javafx.application.PlatformImpl;
 import org.vulpes.games.CarDriving;
+import org.vulpes.games.Circles;
 
 import javax.swing.*;
 import java.io.IOException;
@@ -13,10 +14,11 @@ public class Main {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(300, 300);
         JPanel gamePanel = new JPanel();
-        CarDriving game = new CarDriving();
+        Circles game = new Circles();
         gamePanel.add(game);
+        gamePanel.addMouseListener(game);
+        gamePanel.addMouseMotionListener(game);
         frame.getContentPane().add(gamePanel);
-        frame.addKeyListener(game);
         frame.pack();
         frame.setVisible(true);
     }

@@ -31,10 +31,10 @@ public class CarDriving extends JComponent implements ActionListener, KeyListene
     public static int SPEED = 3;
     public static int OBSTACLE_TIMER = 0;
 
+    Media carHorn;
     Map<String, Image> images = new HashMap<>();
     List<GameElement> gameElements = new ArrayList<>();
     Media happySound;
-    Media carHorn;
     Timer timer = new Timer(5, this);
 
     public CarDriving() throws IOException {
